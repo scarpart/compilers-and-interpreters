@@ -1,0 +1,4 @@
+(executable
+ (public_name syntax_directed_parser)
+ (name main)
+ (libraries syntax_directed_parser core))
