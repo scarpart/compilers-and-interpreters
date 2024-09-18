@@ -48,8 +48,8 @@ let predictive_parsing tokens =
   let term lookahead =
     match lookahead with 
     | x when Char.is_digit (Char.of_string x) -> 
-      let _ = put_token x in 
-      next lookahead x 
+      put_token x 
+      |> next lookahead
     | _ -> report "Syntax error: expected a digit!"
   in
   let rec expr' lookahead = 
