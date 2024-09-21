@@ -52,18 +52,18 @@ let predictive_parsing tokens =
       |> next lookahead
     | _ -> report "Syntax error: expected a digit!"
   in
-  let rec expr' lookahead = 
+  let rec rest lookahead = 
     match lookahead with 
     | x when String.equal x "+" || String.equal x "-" -> 
-      next lookahead x
+      next x lookahead
       |> term 
       |> put_token
-      |> expr' 
+      |> rest 
     | _ -> assert false
   in 
   let expr lookahead = 
-    term lookahead |> expr'
-  in  
+    term lookahead |> rest 
+  in
   match List.hd !tokens with 
   | Some x -> expr x 
   | None -> report "Syntax error: no tokens were scanned!";

@@ -1,2 +1,4 @@
 (library
- (name syntax_directed_parser))
+ (name syntax_directed_parser)
+ (libraries core)
+ (modules lexer token))
