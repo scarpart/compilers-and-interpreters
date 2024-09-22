@@ -13,10 +13,19 @@ let test_scan_input () =
   let t2 = scan_token input in 
   Alcotest.(check token_testable) "same token" t1 t2
 
-let test_scan_digits () = 
+let test_scan_digit () = 
   let input = create_in_channel_of_source "43243 + 3217893131" in 
   let t1 = create_token_value Digit 43243 in 
   let t2 = scan_token input in 
   Alcotest.(check token_testable) "same token" t1 t2
 
-
+let () =
+  Alcotest.run "Lexer"
+    [
+      ( "lexer-scanning",
+        [
+          Alcotest.test_case "Scans reserved keyword" `Quick test_scan_input;
+          Alcotest.test_case "Scans digit" `Quick test_scan_digit;
+        ] 
+      );
+    ]
