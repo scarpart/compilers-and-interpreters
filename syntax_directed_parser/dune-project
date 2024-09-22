@@ -5,11 +5,11 @@
 (generate_opam_files true)
 
 (source
- (github username/reponame))
+ (github scarpart/compilers-and-interpreters))
 
-(authors "Author Name")
+(authors "scarpart")
 
-(maintainers "Maintainer Name")
+(maintainers "scarpart")
 
 (license LICENSE)
 
@@ -17,8 +17,8 @@
 
 (package
  (name syntax_directed_parser)
- (synopsis "A short synopsis")
- (description "A longer description")
+ (synopsis "Syntax-directed parser as presented in the Dragon Book, with my own twists.")
+ (description "Syntax-directed parser written in OCaml for learning purposes and for the sake of having fun.")
  (depends ocaml dune)
  (tags
   (topics "to describe" your project)))

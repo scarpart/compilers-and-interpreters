@@ -1,6 +1,16 @@
-(test
- (name test_syntax_directed_parser)
- (modules lexer_test test_syntax_directed_parser)
+;;(test
+;; (name test_syntax_directed_parser)
+;; (modules lexer_test test_syntax_directed_parser)
+;; (libraries alcotest core syntax_directed_parser))
+(executables
+ (names lexer_test)
+ (modes exe)
  (libraries alcotest core syntax_directed_parser))
 
+(copy_files testfiles/*)
 
+(rule
+ (alias runtest)
+ (package syntax_directed_parser)
+ (action
+  (run %{dep:lexer_test.exe})))
