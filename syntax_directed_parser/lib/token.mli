@@ -1,8 +1,10 @@
 type terminal = 
-    Id | Digit | String 
+  | Id | Digit | String 
+  | Ignore | Unknown
 
-type token = { terminal: terminal; lexeme: string; } 
+type token = { terminal: terminal; lexeme: string option; value: int option } 
 
-val create_token : terminal -> string -> token
+val create_token_lexeme : terminal -> string -> token
+val create_token_value : terminal -> int -> token
 
 

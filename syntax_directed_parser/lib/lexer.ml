@@ -3,10 +3,14 @@ open Token;;
 
 let create_string_table () = 
   let seq = Sequence.of_list [
-      ("for", create_token Id "for");
-      (";", create_token Id ";");
-      ("while", create_token Id "while");
-      ("var", create_token Id "var")
+      ("for", create_token_lexeme Id "for");
+      (";", create_token_lexeme Id ";");
+      ("while", create_token_lexeme Id "while");
+      ("var", create_token_lexeme Id "var");
+      ("(", create_token_lexeme Id "(");
+      (")", create_token_lexeme Id ")");
+      ("/", create_token_lexeme Id "/");
+      ("*", create_token_lexeme Id "*");
     ] 
   in 
   Map.of_sequence_exn (module String) seq
@@ -22,7 +26,7 @@ let scan_whitespace channel =
     if Char.(=) !peek '/' then is_comment := true
     else if Char.(=) !peek '\n' then is_comment := false;
   done;
-  Some ()
+  Some (create_token_lexeme Ignore "")
 ;;
 
 let scan_digit channel = 
@@ -33,7 +37,7 @@ let scan_digit channel =
        number := !number * 10 + Char.to_int !peek;
        peek := (Option.value_exn (In_channel.input_char channel))
      done;
-     Some !number)
+     Some (create_token_value Digit !number))
   else None
 ;;
 
@@ -60,13 +64,33 @@ let scan_identifier channel =
   let lexeme = lexeme_of_input channel init_pos end_pos in 
   match Map.find !string_table lexeme with 
   | None -> 
-    let token = create_token Id lexeme in 
-    string_table := Map.set !string_table lexeme token;
+    let token = create_token_lexeme Id lexeme in 
+    string_table := Map.set !string_table ~key:lexeme ~data:token;
     Some token
-  | Some token as some_token -> some_token
+  | Some _ as some_token -> some_token
+;;
+
+let rec _or = function 
+  | [] -> None
+  | f::fs ->
+    match f () with 
+    | None -> _or fs
+    | Some _ as some_token -> some_token
 ;;
 
 let scan_token channel = 
+  let token = _or [
+    (fun () -> scan_whitespace channel);
+    (fun () -> scan_digit channel);
+    (fun () -> scan_identifier channel);
+  ] 
+  in 
+  match token with 
+  | None -> create_token_lexeme Unknown
+              (String.of_char
+                 (Option.value_exn (In_channel.input_char channel)))
+  | Some t -> t
+;;
 
-  
+
 
