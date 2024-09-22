@@ -9,8 +9,13 @@ let create_string_table () =
       ("var", create_token_lexeme Id "var");
       ("(", create_token_lexeme Id "(");
       (")", create_token_lexeme Id ")");
+      ("+", create_token_lexeme Id "+");
+      ("-", create_token_lexeme Id "-");
       ("/", create_token_lexeme Id "/");
       ("*", create_token_lexeme Id "*");
+      ("=", create_token_lexeme Id "=");
+      ("<", create_token_lexeme Id "<");
+      (">", create_token_lexeme Id ">");
     ] 
   in 
   Map.of_sequence_exn (module String) seq

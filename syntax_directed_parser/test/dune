@@ -1,2 +1,6 @@
 (test
- (name test_syntax_directed_parser))
+ (name test_syntax_directed_parser)
+ (modules lexer_test test_syntax_directed_parser)
+ (libraries alcotest core syntax_directed_parser))
+
+
