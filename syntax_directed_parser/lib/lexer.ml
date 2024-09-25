@@ -21,39 +21,51 @@ let create_string_table () =
   Map.of_sequence_exn (module String) seq
 ;;
 
-let string_table = ref (create_string_table ());;
+let string_table = ref (create_string_table ());; 
 
-let scan_whitespace channel = 
-  let peek = ref (Option.value_exn (In_channel.input_char channel)) in 
-  let is_comment = ref false in 
-  while (Char.is_whitespace !peek) || !is_comment do 
-    peek := Option.value_exn (In_channel.input_char channel);
-    if Char.(=) !peek '/' then is_comment := true
-    else if Char.(=) !peek '\n' then is_comment := false;
-  done;
-  Some (create_token_lexeme Ignore "")
+let scan_whitespace peek channel = 
+  let rec scan_whitespace_aux peek is_comment =
+    match peek with 
+    | _ when is_comment ->
+      scan_whitespace_aux (Option.value_exn (In_channel.input_char channel)) is_comment
+    | x when Char.is_whitespace x || (Char.equal '\n' x) ->
+      scan_whitespace_aux (Option.value_exn (In_channel.input_char channel)) false
+    | x when Char.equal '/' x -> 
+      let next = (Option.value_exn (In_channel.input_char channel)) in 
+      if Char.equal '/' next then
+        scan_whitespace_aux (Option.value_exn (In_channel.input_char channel)) true
+      else (next, None)
+    | _ -> (peek, None)
+  in 
+  scan_whitespace_aux peek false
 ;;
 
-let scan_digit channel = 
-  let peek = ref (Option.value_exn (In_channel.input_char channel)) in 
-  let number = ref 0 in  
-  if Char.is_digit !peek then 
-    (while Char.is_digit !peek do 
-       number := !number * 10 + Char.to_int !peek;
-       peek := (Option.value_exn (In_channel.input_char channel))
-     done;
-     Some (create_token_value Digit !number))
-  else None
+let char_value_to_int char = 
+  Char.to_int char - Char.to_int '0'
 ;;
 
-let scan_identifier_position channel = 
-  let peek = ref (Option.value_exn (In_channel.input_char channel)) in 
-  let init_pos = In_channel.pos channel in 
-  let end_pos = ref init_pos in 
-  while Char.is_alphanum !peek do 
-    Int64.(end_pos := !end_pos + Int64.of_int 1);
-  done;
-  (Int.of_int64_exn init_pos, Int.of_int64_exn !end_pos)
+let scan_digit peek channel = 
+  let rec scan_digit_aux ?(is_digit = false) peek number = 
+    if Char.is_digit peek then 
+      let next = Option.value_exn (In_channel.input_char channel) in 
+      scan_digit_aux next (number * 10 + char_value_to_int peek) ~is_digit:true
+    else 
+    if is_digit then (peek, Some (create_token_value Digit number)) else (peek, None)
+  in 
+  scan_digit_aux peek 0 ~is_digit:false
+;;
+
+let scan_identifier_position peek channel = 
+  (* -1 because we're already receiving the peek here 
+   * i.e. starting from an already parsed position *)
+  let init_pos = Int.of_int64_exn (In_channel.pos channel) - 1 in 
+  let rec scan_identifier_pos_aux peek pos = 
+    if Char.is_alphanum peek then
+      scan_identifier_pos_aux 
+        (Option.value_exn (In_channel.input_char channel)) (pos + 1)
+    else (peek, (init_pos, pos))
+  in 
+  scan_identifier_pos_aux peek init_pos
 ;;
 
 let lexeme_of_input channel init_pos end_pos = 
@@ -64,22 +76,25 @@ let lexeme_of_input channel init_pos end_pos =
   Bytes.to_string buf  
 ;;
 
-let scan_identifier channel = 
-  let (init_pos, end_pos) = scan_identifier_position channel in 
+let scan_identifier peek channel = 
+  let (peek, (init_pos, end_pos)) = scan_identifier_position peek channel in 
   let lexeme = lexeme_of_input channel init_pos end_pos in 
   match Map.find !string_table lexeme with 
   | None -> 
     let token = create_token_lexeme Id lexeme in 
     string_table := Map.set !string_table ~key:lexeme ~data:token;
-    Some token
-  | Some _ as some_token -> some_token
+    (peek, Some token)
+  | Some _ as some_token -> (peek, some_token)
 ;;
 
+(*
+
+(* TODO: all of this stuff here *)
 let rec _or = function 
   | [] -> None
   | f::fs ->
     match f () with 
-    | None -> _or fs
+    | (peek, None) -> _or fs
     | Some _ as some_token -> some_token
 ;;
 
@@ -96,6 +111,5 @@ let scan_token channel =
                  (Option.value_exn (In_channel.input_char channel)))
   | Some t -> t
 ;;
-
-
-
+*
+*)
