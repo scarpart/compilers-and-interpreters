@@ -23,13 +23,20 @@ let create_string_table () =
 
 let string_table = ref (create_string_table ());; 
 
+(* TODO: change this into something better later *)
+let is_char_symbol = function 
+  | '(' | ')' | '+' | '-' | '/' 
+  | '*' | '=' | '<' | '>' | ';' -> true
+  | _ -> false
+;;
+
 let next_peek_exn channel = 
   Option.value_exn (In_channel.input_char channel)
 ;;
 
-let seek_back ?(n=1) channel = 
-  In_channel.seek channel (Int64.(-) (In_channel.pos channel) (Int64.of_int n))
-;;
+(*let seek_back ?(n=1) channel = 
+*  In_channel.seek channel (Int64.(-) (In_channel.pos channel) (Int64.of_int n))
+*;;*)
 
 let seek_back_absolute ?(n=0) channel = 
   In_channel.seek channel (Int64.of_int n) 
@@ -59,7 +66,7 @@ let char_value_to_int char =
 let scan_digit peek channel = 
   let rec scan_digit_aux ?(is_digit = false) peek number = 
     if Char.is_digit peek then 
-      let next = Option.value_exn (In_channel.input_char channel) in 
+      let next = next_peek_exn channel in 
       scan_digit_aux next (number * 10 + char_value_to_int peek) ~is_digit:true
     else 
     if is_digit then (peek, Some (create_token_value Digit number)) else (peek, None)
@@ -72,7 +79,7 @@ let scan_identifier_position peek channel =
    * i.e. starting from an already parsed position *)
   let init_pos = Int.of_int64_exn (In_channel.pos channel) - 1 in 
   let rec scan_identifier_pos_aux peek pos = 
-    if Char.is_alphanum peek then
+    if Char.is_alphanum peek || is_char_symbol peek then
       scan_identifier_pos_aux 
         (Option.value_exn (In_channel.input_char channel)) (pos + 1)
     else (peek, (init_pos, pos))
