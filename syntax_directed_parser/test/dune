@@ -4,7 +4,7 @@
 ;; (libraries alcotest core syntax_directed_parser))
 (executables
  (names lexer_test)
- (modes exe)
+ (modes byte exe)
  (libraries alcotest core syntax_directed_parser))
 
 (copy_files testfiles/*)

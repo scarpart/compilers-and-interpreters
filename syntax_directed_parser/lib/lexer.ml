@@ -23,18 +23,30 @@ let create_string_table () =
 
 let string_table = ref (create_string_table ());; 
 
-let scan_whitespace peek channel = 
+let next_peek_exn channel = 
+  Option.value_exn (In_channel.input_char channel)
+;;
+
+let seek_back ?(n=1) channel = 
+  In_channel.seek channel (Int64.(-) (In_channel.pos channel) (Int64.of_int n))
+;;
+
+let seek_back_absolute ?(n=0) channel = 
+  In_channel.seek channel (Int64.of_int n) 
+;;
+
+let scan_whitespace peek channel : char * token option = 
   let rec scan_whitespace_aux peek is_comment =
     match peek with 
     | _ when is_comment ->
-      scan_whitespace_aux (Option.value_exn (In_channel.input_char channel)) is_comment
+      scan_whitespace_aux (next_peek_exn channel) is_comment
     | x when Char.is_whitespace x || (Char.equal '\n' x) ->
-      scan_whitespace_aux (Option.value_exn (In_channel.input_char channel)) false
+      scan_whitespace_aux (next_peek_exn channel) false
     | x when Char.equal '/' x -> 
-      let next = (Option.value_exn (In_channel.input_char channel)) in 
+      let next = (next_peek_exn channel) in 
       if Char.equal '/' next then
-        scan_whitespace_aux (Option.value_exn (In_channel.input_char channel)) true
-      else (next, None)
+        scan_whitespace_aux (next_peek_exn channel) true
+      else (next, None) (* TODO: probably go back one position here *)
     | _ -> (peek, None)
   in 
   scan_whitespace_aux peek false
@@ -69,10 +81,15 @@ let scan_identifier_position peek channel =
 ;;
 
 let lexeme_of_input channel init_pos end_pos = 
-  let _ = In_channel.seek channel (Int64.of_int init_pos) in 
+  Printf.printf "current channel pos = %d\n%!" (Int.of_int64_exn (In_channel.pos channel));
+  seek_back_absolute channel ~n:init_pos;
   let len = end_pos - init_pos in 
   let buf = Bytes.create_local len in 
-  In_channel.really_input_exn channel ~pos:init_pos ~buf ~len;
+  (
+    Printf.printf "current channel pos = %d\n%!" (Int.of_int64_exn (In_channel.pos channel));
+    Printf.printf "init_pos=%d\nendpos=%d\nlen=%d\nbuflen=%d\n%!" init_pos end_pos len (Bytes.length buf);
+    In_channel.really_input_exn channel ~pos:init_pos ~buf ~len;
+  );
   Bytes.to_string buf  
 ;;
 
@@ -87,29 +104,30 @@ let scan_identifier peek channel =
   | Some _ as some_token -> (peek, some_token)
 ;;
 
-(*
-
-(* TODO: all of this stuff here *)
-let rec _or = function 
-  | [] -> None
+let rec _or peek list = 
+  match list with 
+  | [] -> (peek, None)
   | f::fs ->
-    match f () with 
-    | (peek, None) -> _or fs
-    | Some _ as some_token -> some_token
+    match f (peek) with 
+    | (next, None) -> _or next fs
+    | (next, some_token) -> (next, some_token)
 ;;
 
 let scan_token channel = 
-  let token = _or [
-    (fun () -> scan_whitespace channel);
-    (fun () -> scan_digit channel);
-    (fun () -> scan_identifier channel);
-  ] 
-  in 
-  match token with 
-  | None -> create_token_lexeme Unknown
-              (String.of_char
-                 (Option.value_exn (In_channel.input_char channel)))
-  | Some t -> t
+  let scan_token_helper () = 
+    let peek = Option.value_exn (In_channel.input_char channel) in
+    let token = _or peek [
+        (fun (next) -> scan_whitespace next channel);
+        (fun (next) -> scan_digit next channel);
+        (fun (next) -> scan_identifier next channel);
+      ] 
+    in 
+    match token with 
+    | (next, None) -> create_token_lexeme Unknown (String.of_char next)
+    | (_, Some t) -> t
+  in
+  let result = scan_token_helper () in
+  result
 ;;
-*
-*)
+
+

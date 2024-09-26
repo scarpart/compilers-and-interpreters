@@ -6,7 +6,6 @@ let create_in_channel_of_source s =
   let cwd = Core_unix.getcwd () in 
   In_channel.create ~binary:false (cwd ^ "/testfiles/" ^ s)
 
-
 let test_scan_whitespace () = 
   let input = create_in_channel_of_source "forloop" in 
   let peek1 = Option.value_exn (In_channel.input_char input) in 
@@ -14,14 +13,6 @@ let test_scan_whitespace () =
   Alcotest.(check char) "same char" next 'f';
   Alcotest.(check bool) "same option" true (Option.is_none opt)
 ;;
-
-(*
-let test_scan_input () = 
-  let input = create_in_channel_of_source "forloop" in 
-  let t1 = create_token_lexeme Id "for" in 
-  let t2 = scan_token input in 
-  Alcotest.(check token_testable) "same token" t1 t2 
-  *)
 
 let test_scan_digit () = 
   let input = create_in_channel_of_source "digits" in 
@@ -45,12 +36,22 @@ let test_scan_identifier () =
   end
 ;;
 
+let test_scan_input () = 
+  let input = create_in_channel_of_source "forloop" in 
+  let t1_l = create_token_lexeme Id "for" in 
+  let t1_r = scan_token input in 
+  Alcotest.(check token_testable) "same token (identifier 'for')" t1_l t1_r;
+  let t2_l = create_token_lexeme Id "(" in 
+  let t2_r = scan_token input in 
+  Alcotest.(check token_testable) "same token (identifier '(')" t2_l t2_r
+;;
+
 let () =
   Alcotest.run "Lexer"
     [
       ( "lexer-scanning",
         [
-          (* Alcotest.test_case "Scans reserved keyword" `Quick test_scan_input; *)
+          Alcotest.test_case "Scans reserved keyword" `Quick test_scan_input;
         ] 
       ); 
       ( "helper-functions", 
