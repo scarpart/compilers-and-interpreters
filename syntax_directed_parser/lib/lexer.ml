@@ -34,6 +34,10 @@ let next_peek_exn channel =
   Option.value_exn (In_channel.input_char channel)
 ;;
 
+let cur_scan_pos chan =
+  Option.value_exn (Int64.to_int (In_channel.pos chan))
+;;
+
 (*let seek_back ?(n=1) channel = 
 *  In_channel.seek channel (Int64.(-) (In_channel.pos channel) (Int64.of_int n))
 *;;*)
@@ -87,15 +91,17 @@ let scan_identifier_position peek channel =
   scan_identifier_pos_aux peek init_pos
 ;;
 
-let lexeme_of_input channel init_pos end_pos = 
-  Printf.printf "current channel pos = %d\n%!" (Int.of_int64_exn (In_channel.pos channel));
-  seek_back_absolute channel ~n:init_pos;
+let lexeme_of_input chan init_pos end_pos = 
+  seek_back_absolute chan ~n:init_pos;
+  (* Normalize init position to zero otherwise it is not a valid position for the buffer *)
+  let rel_init_pos = init_pos - (cur_scan_pos chan) in
   let len = end_pos - init_pos in 
   let buf = Bytes.create_local len in 
   (
-    Printf.printf "current channel pos = %d\n%!" (Int.of_int64_exn (In_channel.pos channel));
-    Printf.printf "init_pos=%d\nendpos=%d\nlen=%d\nbuflen=%d\n%!" init_pos end_pos len (Bytes.length buf);
-    In_channel.really_input_exn channel ~pos:init_pos ~buf ~len;
+    Printf.printf "current channel pos = %d\n%!" (Int.of_int64_exn (In_channel.pos chan));
+    Printf.printf "rel_init_pos=%d\ninit_pos=%d\nendpos=%d\nlen=%d\nbuflen=%d\n%!" 
+      rel_init_pos init_pos end_pos len (Bytes.length buf);
+    In_channel.really_input_exn chan ~pos:rel_init_pos ~buf ~len;
   );
   Bytes.to_string buf  
 ;;

@@ -31,13 +31,13 @@ let test_scan_identifier () =
   let (next, opt) = scan_identifier peek1 input in 
   begin
     Alcotest.(check token_testable) "same identifier (for)" 
-      { terminal=Id; lexeme=Some "for"; value=None} (Option.value_exn opt);
+      { terminal=Id; lexeme=Some "for"; value=None } (Option.value_exn opt);
     Alcotest.(check char) "same next character (whitespace)" ' ' next
   end
 ;;
 
-let test_scan_input () = 
-  let input = create_in_channel_of_source "forloop" in 
+let test_scan_input_with_comments () = 
+  let input = create_in_channel_of_source "forloop_comment" in 
   let t1_l = create_token_lexeme Id "for" in 
   let t1_r = scan_token input in 
   Alcotest.(check token_testable) "same token (identifier 'for')" t1_l t1_r;
@@ -51,7 +51,7 @@ let () =
     [
       ( "lexer-scanning",
         [
-          Alcotest.test_case "Scans reserved keyword" `Quick test_scan_input;
+          Alcotest.test_case "Scans reserved keyword" `Quick test_scan_input_with_comments;
         ] 
       ); 
       ( "helper-functions", 
