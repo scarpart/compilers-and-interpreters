@@ -13,27 +13,20 @@ let create_string_table () =
 
 let string_table = ref (create_string_table ());; 
 
-(* TODO: change this into something better later *)
-let is_char_symbol = function 
-  | '(' | ')' | '+' | '-' | '/' 
-  | '*' | '=' | '<' | '>' | ';' -> true
-  | _ -> false
-;;
-
-let next_peek_exn channel = 
-  Option.value_exn (In_channel.input_char channel)
+let next_peek_exn ch = 
+  Option.value_exn (In_channel.input_char ch)
 ;;
 
 let cur_scan_pos chan =
   Option.value_exn (Int64.to_int (In_channel.pos chan))
 ;;
 
-(*let seek_back ?(n=1) channel = 
-*  In_channel.seek channel (Int64.(-) (In_channel.pos channel) (Int64.of_int n))
+(*let seek_back ?(n=1) ch = 
+*  In_channel.seek ch (Int64.(-) (In_channel.pos ch) (Int64.of_int n))
 *;;*)
 
-let seek_back_absolute ?(n=0) channel = 
-  In_channel.seek channel (Int64.of_int n) 
+let seek_back_absolute ?(n=0) ch = 
+  In_channel.seek ch (Int64.of_int n) 
 ;;
 
 let scan_whitespace peek chan : char * Token.t option = 
@@ -57,10 +50,10 @@ let char_value_to_int char =
   Char.to_int char - Char.to_int '0'
 ;;
 
-let scan_digit peek channel = 
+let scan_digit peek ch = 
   let rec scan_digit_aux ?(is_digit = false) peek number = 
     if Char.is_digit peek then 
-      let next = next_peek_exn channel in 
+      let next = next_peek_exn ch in 
       scan_digit_aux next (number * 10 + char_value_to_int peek) ~is_digit:true
     else 
     if is_digit then (peek, Some (Int (number))) else (peek, None)
@@ -68,14 +61,21 @@ let scan_digit peek channel =
   scan_digit_aux peek 0 ~is_digit:false
 ;;
 
-let scan_identifier_position peek channel = 
+let scan_symbol peek ch = 
+  let next = next_peek_exn ch in 
+  if Symbol.is_symbol peek then 
+    (next, Some (Symbol (Symbol.of_char peek)))
+  else 
+    (next, None)
+;;
+
+let scan_identifier_position peek ch = 
   (* -1 because we're already receiving the peek here 
    * i.e. starting from an already parsed position *)
-  let init_pos = Int.of_int64_exn (In_channel.pos channel) - 1 in 
+  let init_pos = Int.of_int64_exn (In_channel.pos ch) - 1 in 
   let rec scan_identifier_pos_aux peek pos = 
-    if Char.is_alphanum peek || is_char_symbol peek then
-      scan_identifier_pos_aux 
-        (Option.value_exn (In_channel.input_char channel)) (pos + 1)
+    if Char.is_alphanum peek then
+      scan_identifier_pos_aux (next_peek_exn ch) (pos + 1)
     else (peek, (init_pos, pos))
   in 
   scan_identifier_pos_aux peek init_pos
@@ -88,7 +88,7 @@ let lexeme_of_input chan init_pos end_pos =
   let len = end_pos - init_pos in 
   let buf = Bytes.create_local len in 
   (
-    Printf.printf "current channel pos = %d\n%!" (Int.of_int64_exn (In_channel.pos chan));
+    Printf.printf "current ch pos = %d\n%!" (Int.of_int64_exn (In_channel.pos chan));
     Printf.printf "rel_init_pos=%d\ninit_pos=%d\nendpos=%d\nlen=%d\nbuflen=%d\n%!" 
       rel_init_pos init_pos end_pos len (Bytes.length buf);
     In_channel.really_input_exn chan ~pos:rel_init_pos ~buf ~len;
@@ -96,9 +96,9 @@ let lexeme_of_input chan init_pos end_pos =
   Bytes.to_string buf  
 ;;
 
-let scan_identifier peek channel = 
-  let (peek, (init_pos, end_pos)) = scan_identifier_position peek channel in 
-  let lexeme = lexeme_of_input channel init_pos end_pos in 
+let scan_identifier peek ch = 
+  let (peek, (init_pos, end_pos)) = scan_identifier_position peek ch in 
+  let lexeme = lexeme_of_input ch init_pos end_pos in 
   match Map.find !string_table lexeme with 
   | None -> 
     let token = Id(lexeme) in 
@@ -116,17 +116,18 @@ let rec _or peek list =
     | (next, some_token) -> (next, some_token)
 ;;
 
-let scan_token channel = 
+let scan_token ch = 
   let scan_token_helper () = 
-    let peek = Option.value_exn (In_channel.input_char channel) in
+    let peek = Option.value_exn (In_channel.input_char ch) in
     let token = _or peek [
-        (fun (next) -> scan_whitespace next channel);
-        (fun (next) -> scan_digit next channel);
-        (fun (next) -> scan_identifier next channel);
+        (fun (next) -> scan_whitespace next ch);
+        (fun (next) -> scan_digit next ch);
+        (fun (next) -> scan_symbol next ch);
+        (fun (next) -> scan_identifier next ch);
       ] 
     in 
-    match token with (*NOTE: prob should not be ID here *) 
-    | (next, None) -> Id(String.of_char next) 
+    match token with 
+    | (next, None) -> Symbol (Symbol.of_char next)
     | (_, Some t) -> t
   in
   let result = scan_token_helper () in

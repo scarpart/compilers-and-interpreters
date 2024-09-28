@@ -1,0 +1,12 @@
+// This is a comment for the scanner to mess around with
+// yet another comment 
+
+/* 
+this is a multiline comment with things in the middle
+like (32 - var_a) * 10
+43 - 4 + ident */
+
+/* third */
+/* fourth
+*/
+(32 - var_a) * 10 - 5 + var_b
