@@ -21,29 +21,50 @@ let cur_scan_pos chan =
   Option.value_exn (Int64.to_int (In_channel.pos chan))
 ;;
 
-(*let seek_back ?(n=1) ch = 
-*  In_channel.seek ch (Int64.(-) (In_channel.pos ch) (Int64.of_int n))
-*;;*)
+let seek_back ?(n=1) ch = 
+ In_channel.seek ch (Int64.(-) (In_channel.pos ch) (Int64.of_int n))
+;;
 
 let seek_back_absolute ?(n=0) ch = 
   In_channel.seek ch (Int64.of_int n) 
 ;;
 
-let scan_whitespace peek chan : char * Token.t option = 
-  let rec scan_whitespace_aux peek is_comment =
-    match peek with 
-    | x when Char.equal '\n' x ->
-      scan_whitespace_aux (next_peek_exn chan) false
-    | x when Char.is_whitespace x || is_comment -> 
-      scan_whitespace_aux (next_peek_exn chan) is_comment
-    | x when Char.equal '/' x -> 
-      let next = (next_peek_exn chan) in 
-      if Char.equal '/' next then
-        scan_whitespace_aux (next_peek_exn chan) true
-      else (next, None) (* TODO: probably go back one position here *)
-    | _ -> (peek, None)
+type whitespace_state =
+  | NoComment
+  | MaybeComment
+  | SingleLineComment 
+  | MultipleLineComment 
+  | MaybeEndMultipleLineComment
+  | End
+;;
+
+let scan_whitespace peek ch =
+  let rec scan_whitespace_aux peek = function 
+    | NoComment ->
+      (match peek with 
+       | '/' -> scan_whitespace_aux (next_peek_exn ch) MaybeComment
+       | '\n' | '\t' -> scan_whitespace_aux (next_peek_exn ch) NoComment
+       | _ -> scan_whitespace_aux peek End)
+    | MaybeComment -> 
+      (match peek with 
+       | '/' -> scan_whitespace_aux (next_peek_exn ch) SingleLineComment
+       | '*' -> scan_whitespace_aux (next_peek_exn ch) MultipleLineComment
+       | _ -> (seek_back ch; scan_whitespace_aux peek End))
+    | SingleLineComment -> 
+      if Char.equal '\n' peek then
+        scan_whitespace_aux (next_peek_exn ch) NoComment
+      else scan_whitespace_aux (next_peek_exn ch) SingleLineComment
+    | MultipleLineComment ->
+      if Char.equal '*' peek then
+        scan_whitespace_aux (next_peek_exn ch) MaybeEndMultipleLineComment
+      else scan_whitespace_aux (next_peek_exn ch) MultipleLineComment
+    | MaybeEndMultipleLineComment -> 
+      if Char.equal '/' peek then 
+        scan_whitespace_aux (next_peek_exn ch) NoComment
+      else scan_whitespace_aux (next_peek_exn ch) MultipleLineComment
+    | End -> (peek, None)
   in 
-  scan_whitespace_aux peek false
+  scan_whitespace_aux peek NoComment
 ;;
 
 let char_value_to_int char = 
@@ -86,12 +107,7 @@ let lexeme_of_input chan init_pos end_pos =
   let rel_init_pos = init_pos - (cur_scan_pos chan) in
   let len = end_pos - init_pos in 
   let buf = Bytes.create_local len in 
-  (
-    Printf.printf "current ch pos = %d\n%!" (Int.of_int64_exn (In_channel.pos chan));
-    Printf.printf "rel_init_pos=%d\ninit_pos=%d\nendpos=%d\nlen=%d\nbuflen=%d\n%!" 
-      rel_init_pos init_pos end_pos len (Bytes.length buf);
-    In_channel.really_input_exn chan ~pos:rel_init_pos ~buf ~len;
-  );
+  In_channel.really_input_exn chan ~pos:rel_init_pos ~buf ~len;
   Bytes.to_string buf  
 ;;
 
@@ -117,7 +133,7 @@ let rec _or peek list =
 
 let scan_token ch = 
   let scan_token_helper () = 
-    let peek = Option.value_exn (In_channel.input_char ch) in
+    let peek = next_peek_exn ch in
     let token = _or peek [
         (fun (next) -> scan_whitespace next ch);
         (fun (next) -> scan_digit next ch);
@@ -129,8 +145,7 @@ let scan_token ch =
     | (next, None) -> Symbol (Symbol.of_char next)
     | (_, Some t) -> t
   in
-  let result = scan_token_helper () in
-  result
+  scan_token_helper () 
 ;;
 
 

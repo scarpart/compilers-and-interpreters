@@ -54,6 +54,17 @@ let test_scan_input () =
 ;;
 
 let test_scan_input_with_comments () = 
+  let input = create_in_channel_of_source "dragon_book_ex1_comment" in 
+  let t1_l = Symbol OpenParen in 
+  let t1_r = scan_token input in 
+  Alcotest.(check token_testable) "same token (symbol '(')" t1_l t1_r;
+  let t2_l = Int 32 in 
+  let t2_r = scan_token input in 
+  Alcotest.(check token_testable) "same token (int '32')" t2_l t2_r
+;;
+
+(*
+let test_scan_input_with_comments () = 
   let input = create_in_channel_of_source "forloop_comment" in 
   let t1_l = Id "for" in 
   let t1_r = scan_token input in 
@@ -62,6 +73,7 @@ let test_scan_input_with_comments () =
   let t2_r = scan_token input in 
   Alcotest.(check token_testable) "same token (symbol '(')" t2_l t2_r
 ;;
+*)
 
 let () =
   Alcotest.run "Lexer"
@@ -69,7 +81,6 @@ let () =
       ( "lexer-scanning",
         [
           Alcotest.test_case "Scans reserved keyword" `Quick test_scan_input_with_comments;
-
           Alcotest.test_case "Scans simple input" `Quick test_scan_input
         ] 
       ); 
