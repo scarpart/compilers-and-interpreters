@@ -61,12 +61,11 @@ let scan_digit peek ch =
   scan_digit_aux peek 0 ~is_digit:false
 ;;
 
-let scan_symbol peek ch = 
-  let next = next_peek_exn ch in 
+let scan_symbol peek _ = 
   if Symbol.is_symbol peek then 
-    (next, Some (Symbol (Symbol.of_char peek)))
+    (peek, Some (Symbol (Symbol.of_char peek)))
   else 
-    (next, None)
+    (peek, None)
 ;;
 
 let scan_identifier_position peek ch = 

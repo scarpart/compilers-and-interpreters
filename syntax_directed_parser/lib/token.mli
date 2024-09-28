@@ -7,5 +7,5 @@ type t =
   | Symbol of Symbol.symbol
 ;;
 
-val token_equal : t -> t -> bool
-val token_testable : t Alcotest.testable
+val token_equal : t -> t -> bool;;
+val token_testable : t Alcotest.testable;;
