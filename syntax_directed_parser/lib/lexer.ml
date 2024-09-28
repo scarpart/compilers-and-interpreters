@@ -1,6 +1,7 @@
 open Core;;
 open Token;;
 
+(* TODO: fix these tokens - should not be identifiers *)
 let create_string_table () = 
   let seq = Sequence.of_list [
       ("for", create_token_lexeme Id "for");
@@ -46,17 +47,17 @@ let seek_back_absolute ?(n=0) channel =
   In_channel.seek channel (Int64.of_int n) 
 ;;
 
-let scan_whitespace peek channel : char * token option = 
+let scan_whitespace peek chan : char * token option = 
   let rec scan_whitespace_aux peek is_comment =
     match peek with 
-    | _ when is_comment ->
-      scan_whitespace_aux (next_peek_exn channel) is_comment
-    | x when Char.is_whitespace x || (Char.equal '\n' x) ->
-      scan_whitespace_aux (next_peek_exn channel) false
+    | x when Char.equal '\n' x ->
+      scan_whitespace_aux (next_peek_exn chan) false
+    | x when Char.is_whitespace x || is_comment -> 
+      scan_whitespace_aux (next_peek_exn chan) is_comment
     | x when Char.equal '/' x -> 
-      let next = (next_peek_exn channel) in 
+      let next = (next_peek_exn chan) in 
       if Char.equal '/' next then
-        scan_whitespace_aux (next_peek_exn channel) true
+        scan_whitespace_aux (next_peek_exn chan) true
       else (next, None) (* TODO: probably go back one position here *)
     | _ -> (peek, None)
   in 

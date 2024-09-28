@@ -1,3 +1,4 @@
+(* TODO: fix this - Ignore and Unknown should not exist *)
 type terminal = 
   | Id | Digit | String 
   | Ignore | Unknown

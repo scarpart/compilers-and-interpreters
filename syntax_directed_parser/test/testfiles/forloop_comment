@@ -1,2 +1,2 @@
-// this is a for loop my good man
+// comment here 
 for ( var = 32; var < 400; var = var + 32 )
