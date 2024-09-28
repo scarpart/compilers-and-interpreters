@@ -20,7 +20,7 @@ let test_scan_digit () =
   let (next, opt) = scan_digit peek1 input in 
   Alcotest.(check char) "same char" next ' ';
   Alcotest.(check bool) "is some" true (Option.is_some opt);
-  let number = (Option.value_exn (Option.value_exn opt).value) in
+  let Int(number) = (Option.value_exn opt) in
   (Printf.printf "Got the following number from the token = %d\n%!" number;
   Alcotest.(check bool) "is correct number" true (43243 = number))
 ;; 
@@ -31,17 +31,17 @@ let test_scan_identifier () =
   let (next, opt) = scan_identifier peek1 input in 
   begin
     Alcotest.(check token_testable) "same identifier (for)" 
-      { terminal=Id; lexeme=Some "for"; value=None } (Option.value_exn opt);
+      (Id "for") (Option.value_exn opt);
     Alcotest.(check char) "same next character (whitespace)" ' ' next
   end
 ;;
 
 let test_scan_input_with_comments () = 
   let input = create_in_channel_of_source "forloop_comment" in 
-  let t1_l = create_token_lexeme Id "for" in 
+  let t1_l = Id "for" in 
   let t1_r = scan_token input in 
   Alcotest.(check token_testable) "same token (identifier 'for')" t1_l t1_r;
-  let t2_l = create_token_lexeme Id "(" in 
+  let t2_l = Id "(" in 
   let t2_r = scan_token input in 
   Alcotest.(check token_testable) "same token (identifier '(')" t2_l t2_r
 ;;

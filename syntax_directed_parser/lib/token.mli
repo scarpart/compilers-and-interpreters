@@ -1,15 +1,17 @@
-(* TODO: fix this - Ignore and Unknown should not exist *)
-type terminal = 
-  | Id | Digit | String 
-  | Ignore | Unknown
+type operator = 
+  | Lt | Lteq 
+  | Gt | Gteq 
+  | Eq | Neq
 
-type token = { terminal: terminal; lexeme: string option; value: int option } 
+type t = 
+  | Id of string 
+  | String of string
+  | Int of int
+  | Float of float
+  | Operator of operator
 
-val create_token_lexeme : terminal -> string -> token
-val create_token_value : terminal -> int -> token
+val token_equal : t -> t -> bool
+val pp_token : Format.formatter -> t -> unit
 
-val token_equal : token -> token -> bool
-val pp_token : Format.formatter -> token -> unit
-
-val token_testable : token Alcotest.testable
+val token_testable : t Alcotest.testable
 

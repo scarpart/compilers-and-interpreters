@@ -1,24 +1,13 @@
 open Core;;
 open Token;;
 
-(* TODO: fix these tokens - should not be identifiers *)
 let create_string_table () = 
   let seq = Sequence.of_list [
-      ("for", create_token_lexeme Id "for");
-      (";", create_token_lexeme Id ";");
-      ("while", create_token_lexeme Id "while");
-      ("var", create_token_lexeme Id "var");
-      ("(", create_token_lexeme Id "(");
-      (")", create_token_lexeme Id ")");
-      ("+", create_token_lexeme Id "+");
-      ("-", create_token_lexeme Id "-");
-      ("/", create_token_lexeme Id "/");
-      ("*", create_token_lexeme Id "*");
-      ("=", create_token_lexeme Id "=");
-      ("<", create_token_lexeme Id "<");
-      (">", create_token_lexeme Id ">");
+      ("for", Id "for");
+      ("while", Id "while");
+      ("var", Id "var");
     ] 
-  in 
+  in (* there's probably a better way to make a map than this *)
   Map.of_sequence_exn (module String) seq
 ;;
 
@@ -47,7 +36,7 @@ let seek_back_absolute ?(n=0) channel =
   In_channel.seek channel (Int64.of_int n) 
 ;;
 
-let scan_whitespace peek chan : char * token option = 
+let scan_whitespace peek chan : char * Token.t option = 
   let rec scan_whitespace_aux peek is_comment =
     match peek with 
     | x when Char.equal '\n' x ->
@@ -74,7 +63,7 @@ let scan_digit peek channel =
       let next = next_peek_exn channel in 
       scan_digit_aux next (number * 10 + char_value_to_int peek) ~is_digit:true
     else 
-    if is_digit then (peek, Some (create_token_value Digit number)) else (peek, None)
+    if is_digit then (peek, Some (Int (number))) else (peek, None)
   in 
   scan_digit_aux peek 0 ~is_digit:false
 ;;
@@ -112,7 +101,7 @@ let scan_identifier peek channel =
   let lexeme = lexeme_of_input channel init_pos end_pos in 
   match Map.find !string_table lexeme with 
   | None -> 
-    let token = create_token_lexeme Id lexeme in 
+    let token = Id(lexeme) in 
     string_table := Map.set !string_table ~key:lexeme ~data:token;
     (peek, Some token)
   | Some _ as some_token -> (peek, some_token)
@@ -136,8 +125,8 @@ let scan_token channel =
         (fun (next) -> scan_identifier next channel);
       ] 
     in 
-    match token with 
-    | (next, None) -> create_token_lexeme Unknown (String.of_char next)
+    match token with (*NOTE: prob should not be ID here *) 
+    | (next, None) -> Id(String.of_char next) 
     | (_, Some t) -> t
   in
   let result = scan_token_helper () in
