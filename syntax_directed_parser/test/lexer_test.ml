@@ -1,5 +1,7 @@
 open Syntax_directed_parser.Token;;
 open Syntax_directed_parser.Lexer;;
+open Syntax_directed_parser.Operator;;
+open Syntax_directed_parser.Comparison_operator;;
 open Core;;
 
 let create_in_channel_of_source s = 
@@ -60,7 +62,25 @@ let test_scan_input_with_comments () =
   Alcotest.(check token_testable) "same token (symbol '(')" t1_l t1_r;
   let t2_l = Int 32 in 
   let t2_r = scan_token input in 
-  Alcotest.(check token_testable) "same token (int '32')" t2_l t2_r
+  Alcotest.(check token_testable) "same token (int '32')" t2_l t2_r;
+  let t3_l = Operator Minus in 
+  let t3_r = scan_token input in 
+  Alcotest.(check token_testable) "same operator (plus)" t3_l t3_r
+;;
+
+(* HACK: Many ways to make this test better *)
+let test_scan_comparison_ops () =
+  let input = create_in_channel_of_source "just_comparison_ops" in 
+  let t1_l = CompOp Lteq in 
+  let (_, t1_r_opt) = scan_comparison_operator (next_peek_exn input) input in 
+  let t1_r = Option.value_exn t1_r_opt in 
+  Alcotest.(check token_testable) "same token (CompOp Lteq)" t1_l t1_r;
+  let n1 = next_peek_exn input in 
+  let (n2, _) = scan_whitespace n1 input in 
+  let t2_l = CompOp Neq in 
+  let (_, t2_r_opt) = scan_comparison_operator n2 input in 
+  let t2_r = Option.value_exn t2_r_opt in 
+  Alcotest.(check token_testable) "same token (CompOp Neq)" t2_l t2_r
 ;;
 
 (*
@@ -89,6 +109,7 @@ let () =
           Alcotest.test_case "Scans whitespace" `Quick test_scan_whitespace;
           Alcotest.test_case "Scans digit" `Quick test_scan_int; 
           Alcotest.test_case "Scans identifier" `Quick test_scan_identifier;
+          Alcotest.test_case "Scans comparison operators" `Quick test_scan_comparison_ops;
         ]
       );
     ]

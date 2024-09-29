@@ -4,6 +4,7 @@ type t =
   | Int of int
   | Float of float
   | Operator of Operator.operator
+  | CompOp of Comparison_operator.comp_op
   | Symbol of Symbol.symbol
 ;;
 

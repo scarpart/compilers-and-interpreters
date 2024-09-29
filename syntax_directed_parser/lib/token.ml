@@ -6,6 +6,7 @@ type t =
   | Int of int
   | Float of float
   | Operator of Operator.operator
+  | CompOp of Comparison_operator.comp_op
   | Symbol of Symbol.symbol
 [@@deriving show];;
 
@@ -16,6 +17,7 @@ let token_equal t1 t2 =
   | Int(i1), Int(i2) -> i1 = i2
   | Float(f1), Float(f2) -> Float.equal f1 f2
   | Operator(op1), Operator(op2) -> Operator.equal op1 op2
+  | CompOp(op1), CompOp(op2) -> Comparison_operator.equal op1 op2
   | Symbol(s1), Symbol(s2) -> Symbol.equal s1 s2 
   | _ -> false
 ;;

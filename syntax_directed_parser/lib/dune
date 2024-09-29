@@ -1,6 +1,6 @@
 (library
   (name syntax_directed_parser)
   (libraries core core_unix alcotest)
-  (modules lexer token symbol operator)
+  (modules lexer token symbol operator comparison_operator)
   (preprocess (pps ppx_deriving.show ppx_deriving.ord)))
 
