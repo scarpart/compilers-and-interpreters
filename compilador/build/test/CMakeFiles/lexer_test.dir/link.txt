@@ -1,0 +1,1 @@
+/usr/bin/gcc  -Wall -Wextra -Werror -pedantic -Wno-implicit-function-declaration -std=c11 CMakeFiles/lexer_test.dir/__/src/lexer.c.o CMakeFiles/lexer_test.dir/lexer_test.c.o -o lexer_test  -lcriterion

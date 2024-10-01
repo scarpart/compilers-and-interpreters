@@ -1,0 +1,1 @@
+/usr/bin/gcc  -Wall -Wextra -Werror -pedantic -Wno-implicit-function-declaration -std=c11 CMakeFiles/compositor.dir/src/lexer.c.o CMakeFiles/compositor.dir/src/main.c.o CMakeFiles/compositor.dir/src/token.c.o -o /home/artzmeister/code/coepta/compilers-and-interpreters/compilador/bin/compositor

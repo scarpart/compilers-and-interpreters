@@ -1,3 +1,6 @@
+**/bin
+**/build
+
 *.annot
 *.cmo
 *.cma

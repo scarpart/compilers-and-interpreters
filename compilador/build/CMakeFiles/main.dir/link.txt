@@ -1,0 +1,1 @@
+/usr/bin/gcc  -Wall -Wextra -Werror -pedantic -std=c11 CMakeFiles/main.dir/src/lexer.c.o CMakeFiles/main.dir/src/main.c.o CMakeFiles/main.dir/src/token.c.o -o /home/artzmeister/code/coepta/compilers-and-interpreters/compilador/bin/main

@@ -1,0 +1,6 @@
+/home/artzmeister/code/coepta/compilers-and-interpreters/compilador/build/CMakeFiles/compositor.dir
+/home/artzmeister/code/coepta/compilers-and-interpreters/compilador/build/CMakeFiles/edit_cache.dir
+/home/artzmeister/code/coepta/compilers-and-interpreters/compilador/build/CMakeFiles/rebuild_cache.dir
+/home/artzmeister/code/coepta/compilers-and-interpreters/compilador/build/test/CMakeFiles/lexer_test.dir
+/home/artzmeister/code/coepta/compilers-and-interpreters/compilador/build/test/CMakeFiles/edit_cache.dir
+/home/artzmeister/code/coepta/compilers-and-interpreters/compilador/build/test/CMakeFiles/rebuild_cache.dir
